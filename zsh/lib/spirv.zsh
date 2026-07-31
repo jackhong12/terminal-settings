@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 zinclude "prun.zsh"
+zinclude "check_install.zsh"
 
 # cl_to_spirv: Compile and generate spv files {{{
 cl_to_spirv () {
@@ -13,13 +14,14 @@ cl_to_spirv () {
     echo "  <file>    Base name of the OpenCL source file (without .cl extension)"
     echo ""
     echo "Steps:"
-    echo "  1. clang-17: <file>.cl -> <file>.bc  (LLVM bitcode, OpenCL 3.0, spir64)"
+    echo "  1. clang:         <file>.cl -> <file>.bc  (LLVM bitcode, OpenCL 3.0, spir64)"
     echo "  2. llvm-spirv-17: <file>.bc -> <file>.spv"
     return 0
   fi
   local file=$1
-  clang_bin="/usr/bin/clang-17"
-  spirv_bin="llvm-spirv-17"
+  check_install clang llvm-spirv-17
+  clang_bin="/usr/bin/clang"
+  spirv_bin="/usr/bin/llvm-spirv-17"
   prun "${clang_bin} -O0 -emit-llvm -c ${file}.cl -o ${file}.bc -cl-std=CL3.0 -target spir64"
   prun "${spirv_bin} ${file}.bc -o ${file}.spv"
 }
