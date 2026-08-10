@@ -158,3 +158,24 @@
   assert "$output" contains "ENTRY_CALLED"
   assert "$output" contains "tmux kill-session -t target"
 }
+
+# --- completion ---
+
+@test '_tmux_complete_sessions passes session names to compadd' {
+  tmux_show_all_sessions () { printf "foo\nbar\n" }
+  compadd () { echo "compadd $@" }
+  run _tmux_complete_sessions
+  assert "$output" same_as "compadd -- foo bar"
+}
+
+@test '_tmux_attach delegates to _tmux_complete_sessions' {
+  _tmux_complete_sessions () { echo "COMPLETE_CALLED" }
+  run _tmux_attach
+  assert "$output" same_as "COMPLETE_CALLED"
+}
+
+@test '_tmux_detach delegates to _tmux_complete_sessions' {
+  _tmux_complete_sessions () { echo "COMPLETE_CALLED" }
+  run _tmux_detach
+  assert "$output" same_as "COMPLETE_CALLED"
+}

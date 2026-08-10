@@ -62,6 +62,18 @@ tmux_attach () {
     tmux switch -t $1
   fi
 }
+
+_tmux_complete_sessions () {
+  local -a sessions
+  sessions=($(tmux_show_all_sessions))
+  compadd -- $sessions
+}
+
+_tmux_attach () {
+  _tmux_complete_sessions
+}
+
+compdef _tmux_attach tmux_attach 2>/dev/null
 # }}} tmux_attach
 
 # tmux_entry: Attach to session entry {{{
@@ -112,4 +124,10 @@ tmux_detach () {
 
   tmux kill-session -t $1
 }
+
+_tmux_detach () {
+  _tmux_complete_sessions
+}
+
+compdef _tmux_detach tmux_detach 2>/dev/null
 # }}} tmux_detach
