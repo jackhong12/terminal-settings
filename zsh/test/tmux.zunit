@@ -1,0 +1,160 @@
+#!/usr/bin/env zunit
+
+@setup {
+  ZLIB_DIR="$(git rev-parse --show-toplevel)/zsh/lib"
+  source "$ZLIB_DIR/zlib.zsh"
+  zinclude "tmux.zsh"
+}
+
+# --- tmux_is_active ---
+
+@test 'tmux_is_active returns 0 when TMUX is set' {
+  TMUX="/tmp/tmux-0/default,1,2"
+  run tmux_is_active
+  assert $state equals 0
+}
+
+@test 'tmux_is_active returns 1 when TMUX is unset' {
+  unset TMUX
+  run tmux_is_active
+  assert $state not_equal_to 0
+}
+
+# --- tmux_show_all_sessions ---
+
+@test 'tmux_show_all_sessions lists session names from tmux ls' {
+  tmux () {
+    echo "foo: 1 windows (created Mon Jan  1 00:00:00 2026)"
+    echo "bar: 2 windows (created Mon Jan  1 00:00:00 2026) (attached)"
+  }
+  run tmux_show_all_sessions
+  assert "$output" contains "foo"
+  assert "$output" contains "bar"
+}
+
+# --- tmux_is_session_exist ---
+
+@test 'tmux_is_session_exist requires exactly one argument' {
+  run tmux_is_session_exist
+  assert $state not_equal_to 0
+}
+
+@test 'tmux_is_session_exist returns 1 when tmux is not active' {
+  tmux_is_active () { return 1 }
+  run tmux_is_session_exist foo
+  assert $state not_equal_to 0
+}
+
+@test 'tmux_is_session_exist returns 0 when session is in the list' {
+  tmux_is_active () { return 0 }
+  tmux_show_all_sessions () { printf "foo\nbar\nbaz\n" }
+  run tmux_is_session_exist bar
+  assert $state equals 0
+}
+
+@test 'tmux_is_session_exist returns 1 when session is not in the list' {
+  tmux_is_active () { return 0 }
+  tmux_show_all_sessions () { printf "foo\nbar\nbaz\n" }
+  run tmux_is_session_exist qux
+  assert $state not_equal_to 0
+}
+
+# --- tmux_attach ---
+
+@test 'tmux_attach requires exactly one argument' {
+  run tmux_attach
+  assert $state not_equal_to 0
+}
+
+@test 'tmux_attach creates and attaches to a new session when tmux is not active' {
+  tmux_is_active () { return 1 }
+  tmux () { echo "tmux $@" }
+  run tmux_attach foo
+  assert "$output" contains "tmux new -d -s foo"
+  assert "$output" contains "tmux attach -t foo"
+}
+
+@test 'tmux_attach switches directly when the session already exists' {
+  tmux_is_active () { return 0 }
+  tmux_is_session_exist () { return 0 }
+  tmux () { echo "tmux $@" }
+  run tmux_attach foo
+  assert "$output" same_as "tmux switch -t foo"
+}
+
+@test 'tmux_attach creates the session before switching when it does not exist' {
+  tmux_is_active () { return 0 }
+  tmux_is_session_exist () { return 1 }
+  tmux () { echo "tmux $@" }
+  run tmux_attach foo
+  assert "$output" contains "tmux new -d -s foo"
+  assert "$output" contains "tmux switch -t foo"
+}
+
+# --- tmux_entry ---
+
+@test 'tmux_entry attaches to the entry session' {
+  tmux_attach () { echo "tmux_attach $@" }
+  run tmux_entry
+  assert "$output" same_as "tmux_attach entry"
+}
+
+# --- tmux_get_current_session_name ---
+
+@test 'tmux_get_current_session_name errors when tmux is not active' {
+  tmux_is_active () { return 1 }
+  run tmux_get_current_session_name
+  assert $state not_equal_to 0
+  assert "$output" contains "not active"
+}
+
+@test 'tmux_get_current_session_name returns the current session name' {
+  tmux_is_active () { return 0 }
+  tmux () { echo "myproject" }
+  run tmux_get_current_session_name
+  assert $state equals 0
+  assert "$output" same_as "myproject"
+}
+
+@test 'tmux_get_current_session_name errors when session name is empty' {
+  tmux_is_active () { return 0 }
+  tmux () { echo "" }
+  run tmux_get_current_session_name
+  assert $state not_equal_to 0
+  assert "$output" contains "No active tmux session"
+}
+
+# --- tmux_detach ---
+
+@test 'tmux_detach requires exactly one argument' {
+  run tmux_detach
+  assert $state not_equal_to 0
+}
+
+@test 'tmux_detach errors when session does not exist' {
+  tmux_is_session_exist () { return 1 }
+  run tmux_detach nonexistent
+  assert $state not_equal_to 0
+  assert "$output" contains "does not exist"
+}
+
+@test 'tmux_detach kills the session directly when not the current session' {
+  tmux_is_session_exist () { return 0 }
+  tmux_get_current_session_name () { echo "other" }
+  tmux_entry () { echo "ENTRY_CALLED" }
+  tmux () { echo "tmux $@" }
+  run tmux_detach target
+  assert $state equals 0
+  assert "$output" same_as "tmux kill-session -t target"
+}
+
+@test 'tmux_detach attaches to entry first when killing the current session' {
+  tmux_is_session_exist () { return 0 }
+  tmux_get_current_session_name () { echo "target" }
+  tmux_entry () { echo "ENTRY_CALLED" }
+  tmux () { echo "tmux $@" }
+  run tmux_detach target
+  assert $state equals 0
+  assert "$output" contains "ENTRY_CALLED"
+  assert "$output" contains "tmux kill-session -t target"
+}
