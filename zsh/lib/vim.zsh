@@ -25,8 +25,14 @@ vime () {
 
 vimp () {
   if git_is; then
-    # git repo
-    files=$(git diff-tree --no-commit-id --name-only -r HEAD | tr '\n' '$' | sed 's:^:\$:g' | sed 's:\$: \\\n    :g')
+    current_dir=$(pwd)
+    cd $(git_root)
+    files=""
+    while IFS= read -r file; do
+      files+=" \\"$'\n'
+      files+="  $(realpath $file)"
+    done < <(git diff-tree --no-commit-id --name-only -r HEAD)
+    cd $current_dir
     prun vim $files
   else
     # TODO: p4 repo
