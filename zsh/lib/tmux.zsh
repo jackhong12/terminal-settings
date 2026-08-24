@@ -102,6 +102,12 @@ tmux_get_current_session_name () {
 }
 # }}} tmux_get_current_session_name
 
+# tmuxn: Get the current tmux session name {{{
+
+alias tmuxn="tmux_get_current_session_name"
+
+# }}} tmuxn
+
 # tmux_detach: Kill a specific tmux session {{{
 # Usage:
 #   tmux_detach <session_name>
