@@ -1,5 +1,11 @@
 $CurrentDir = $PSScriptRoot
 
+# Add user-local binaries to PATH (skip if already present)
+$LocalBin = "$HOME\.local\bin"
+if ((Test-Path $LocalBin) -and -not ($env:PATH -split ';' | Where-Object { $_ -eq $LocalBin })) {
+  $env:PATH += ";$LocalBin"
+}
+
 # Set to $false to hide the git segment in the oh-my-posh prompt
 $EnableGitStatus = $true
 
