@@ -23,6 +23,17 @@
           "type": "path"
         },
         {
+          "background": "#FFFB38",
+          "foreground": "#111111",
+          "powerline_symbol": "",
+          "options": {
+            "fetch_status": true
+          },
+          "style": "powerline",
+          "template": " {{ .HEAD }} {{ .Staging.String }}{{ .Working.String }} ",
+          "type": "git"
+        },
+        {
           "background": "#8ED1F7",
           "foreground": "#111111",
           "powerline_symbol": "\ue0b0",
