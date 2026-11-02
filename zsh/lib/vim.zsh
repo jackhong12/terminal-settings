@@ -7,7 +7,7 @@ zinclude "prun.zsh"
 vime () {
   if git_is; then
     # git repo
-    files=$(git status | grep modified | sed "s/\tmodified:   //g" | sed "s/(new commits)//g" | tr '\n' ' ')
+    files=$(git status --porcelain | sed "s/M //g" | tr '\n' ' ')
     prun vim $files
   else
     # p4 repo
