@@ -7,7 +7,12 @@ zinclude "prun.zsh"
 vime () {
   if git_is; then
     # git repo
-    files=$(git status --porcelain | sed "s/M //g" | tr '\n' ' ')
+    root=$(git_root)
+    current=$(pwd)
+    files=$(git status --porcelain | grep "^ M" | sed "s/M //g" | while read f; do
+      full_path="$root/$f"
+      echo -n "$(realpath --relative-to=$current $full_path) "
+    done)
     prun vim $files
   else
     # p4 repo
