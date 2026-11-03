@@ -2,11 +2,18 @@
 
 source ./lib/check_install.zsh
 source ./lib/prun.zsh
+source ./lib/os.zsh
 
-prun check_install git zsh wget curl powerline autojump locales fzf zoxide
-
-# gen en_US.UTF-8
-prun sudo locale-gen en_US.UTF-8
+if is_linux; then
+  prun check_install git zsh wget curl powerline autojump locales fzf zoxide
+  # gen en_US.UTF-8
+  prun sudo locale-gen en_US.UTF-8
+elif is_macos; then
+  prun check_install git zsh wget curl powerline autojump fzf zoxide
+else
+  echo "Unknown OS. Please install the following packages manually:"
+  echo "  git zsh wget curl powerline autojump fzf zoxide"
+fi
 
 # install .oh-my-zsh
 if [ ! -d ${HOME}/.oh-my-zsh ]; then
@@ -67,6 +74,12 @@ printf "  ZSH_LIB_PATH: $zlib_path\n"
 printf "  source:       $repo_zshrc\n"
 # }}} Generate ~/.zshrc
 
-if [[ -z "$CI" ]]; then
-  prun sudo chsh -s $(which zsh)
+if is_linux; then
+  if [[ -z "$CI" ]]; then
+    prun sudo chsh -s $(which zsh)
+  fi
+elif is_macos; then
+  # On macOS, the default shell is zsh.
+else
+  echo "Unknown OS. Please set your default shell to zsh manually."
 fi
