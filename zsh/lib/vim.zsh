@@ -9,7 +9,9 @@ vime () {
     # git repo
     root=$(git_root)
     current=$(pwd)
-    files=$(git status --porcelain | grep "^ M" | sed "s/M //g" | while read f; do
+    # porcelain status codes are 2 chars (XY); Y == 'M' means the worktree
+    # has local modifications, covering both " M" and "MM" (staged+modified)
+    files=$(git status --porcelain | grep -E "^.M" | cut -c4- | while read f; do
       full_path="$root/$f"
       echo -n "$(realpath --relative-to=$current $full_path) "
     done)

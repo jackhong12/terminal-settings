@@ -1,0 +1,68 @@
+#!/usr/bin/env zunit
+
+@setup {
+  ZLIB_DIR="$(git rev-parse --show-toplevel)/zsh/lib"
+  source "$ZLIB_DIR/zlib.zsh"
+  zinclude "vim.zsh"
+  _original_dir=$PWD
+}
+
+@teardown {
+  cd "$_original_dir"
+}
+
+# --- vime ---
+
+@test 'vime opens files with " M" (unstaged modification) status' {
+  local repo=$(mktemp -d)
+  cd "$repo"
+  git init -q
+  git config user.email "a@b.c"
+  git config user.name "Test"
+  echo "a" > file.txt
+  git add file.txt
+  git commit -q -m init
+  echo "b" >> file.txt
+  prun () { echo "PRUN:$@" }
+  run vime
+  assert "$output" contains "file.txt"
+  cd "$_original_dir"
+  rm -rf "$repo"
+}
+
+@test 'vime opens files with "MM" (staged, then further modified) status' {
+  local repo=$(mktemp -d)
+  cd "$repo"
+  git init -q
+  git config user.email "a@b.c"
+  git config user.name "Test"
+  echo "a" > file.txt
+  git add file.txt
+  git commit -q -m init
+  echo "b" >> file.txt
+  git add file.txt
+  echo "c" >> file.txt
+  prun () { echo "PRUN:$@" }
+  run vime
+  assert "$output" contains "file.txt"
+  cd "$_original_dir"
+  rm -rf "$repo"
+}
+
+@test 'vime does not open files with "M " (staged only, no worktree change) status' {
+  local repo=$(mktemp -d)
+  cd "$repo"
+  git init -q
+  git config user.email "a@b.c"
+  git config user.name "Test"
+  echo "a" > file.txt
+  git add file.txt
+  git commit -q -m init
+  echo "b" >> file.txt
+  git add file.txt
+  prun () { echo "PRUN:$@" }
+  run vime
+  assert "$output" same_as "PRUN:vim"
+  cd "$_original_dir"
+  rm -rf "$repo"
+}
