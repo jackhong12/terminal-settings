@@ -1,0 +1,33 @@
+#!/usr/bin/env zunit
+
+@setup {
+  ZLIB_DIR="$(git rev-parse --show-toplevel)/zsh/lib"
+  source "$ZLIB_DIR/path.zsh"
+}
+
+# --- relpath_to ---
+
+@test 'relpath_to returns a file in a sibling directory with ..' {
+  run relpath_to /a/b/c.txt /a/d
+  assert "$output" same_as "../b/c.txt"
+}
+
+@test 'relpath_to returns a file in the base directory as a bare name' {
+  run relpath_to /a/b/c.txt /a/b
+  assert "$output" same_as "c.txt"
+}
+
+@test 'relpath_to returns a file in a subdirectory of the base' {
+  run relpath_to /a/b/c/d.txt /a/b/c
+  assert "$output" same_as "d.txt"
+}
+
+@test 'relpath_to climbs out of a deeper base directory' {
+  run relpath_to /a/b/c.txt /a/b/c/d/e
+  assert "$output" same_as "../../../c.txt"
+}
+
+@test 'relpath_to handles a base with a trailing slash' {
+  run relpath_to /a/b/file.txt /a/b/
+  assert "$output" same_as "file.txt"
+}

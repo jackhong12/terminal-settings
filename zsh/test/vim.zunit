@@ -66,3 +66,24 @@
   cd "$_original_dir"
   rm -rf "$repo"
 }
+
+@test 'vime prints paths relative to a subdirectory of the repo' {
+  local repo=$(mktemp -d)
+  cd "$repo"
+  git init -q
+  git config user.email "a@b.c"
+  git config user.name "Test"
+  mkdir sub
+  echo "a" > file.txt
+  echo "a" > sub/nested.txt
+  git add .
+  git commit -q -m init
+  echo "b" >> file.txt
+  echo "b" >> sub/nested.txt
+  cd sub
+  prun () { echo "PRUN:$@" }
+  run vime
+  assert "$output" same_as "PRUN:vim ../file.txt nested.txt "
+  cd "$_original_dir"
+  rm -rf "$repo"
+}

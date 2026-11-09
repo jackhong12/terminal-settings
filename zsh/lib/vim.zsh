@@ -2,18 +2,20 @@
 
 zinclude "git.zsh"
 zinclude "prun.zsh"
+zinclude "path.zsh"
 
 # vime: Auto-open changed files {{{
 vime () {
   if git_is; then
     # git repo
     root=$(git_root)
-    current=$(pwd)
+    # pwd -P resolves symlinks to match git's root (e.g. /var -> /private/var)
+    current=$(pwd -P)
     # porcelain status codes are 2 chars (XY); Y == 'M' means the worktree
     # has local modifications, covering both " M" and "MM" (staged+modified)
     files=$(git status --porcelain | grep -E "^.M" | cut -c4- | while read f; do
       full_path="$root/$f"
-      echo -n "$(realpath --relative-to=$current $full_path) "
+      echo -n "$(relpath_to $full_path $current) "
     done)
     prun vim $files
   else
